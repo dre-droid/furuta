@@ -1,0 +1,34 @@
+numpy>=1.21.6,<1.28.0
+proxsuite==0.7.2
+gymnasium>=0.29.1,<0.30.0
+pyserial>=3.5,<4.0
+simple-pid>=2.0.0,<3.0.0
+mcap-protobuf-support>=0.4.1
+scipy>=1.11.4,<1.12.0
+pygame>=2.5.2,<3.0.0
+
+# Development dependencies
+ipykernel>=6.26.0,<7.0.0
+matplotlib>=3.7.3,<3.8.0
+pre-commit>=3.5.0,<4.0.0
+#stable-baselines3>=2.2.1,<2.3.0
+wandb>=0.16.2,<0.17.0
+opencv-python>=4.9.0.80,<4.10.0
+hydra-core>=1.3.2,<1.4.0
+tensorboard>=2.15.1,<2.16.0
+moviepy>=1.0.3,<1.1.0
+sbx-rl>=0.10.0,<0.11.0
+pytest>=7.4.4,<8.0.0
+pin==2.7.0
+crocoddyl>=2.0.2,<3.0.0
+#cmeel-mim-solvers
+
+# Platform-specific dependencies
+# Note: jax-metal is only for macOS (darwin)
+# You may need to install these separately based on your platform
+jax-metal>=0.0.5,<0.1.0; platform_system=="Darwin"
+
+# Git dependencies - install these separately after main packages
+ stable-baselines3-contrib @ git+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
+ onshape-to-robot @ git+https://github.com/rhoban/onshape-to-robot.git
+ meshcat @ git+https://github.com/meshcat-dev/meshcat-python
