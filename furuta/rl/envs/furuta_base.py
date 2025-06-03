@@ -58,6 +58,7 @@ class FurutaBase(gym.Env):
         render_mode="rgb_array",
     ):
         self.metadata["render_fps"] = control_freq
+        self.render_mode = render_mode  # Store render_mode as a class attribute
         self.viewer = Viewer2D(control_freq, render_mode)
 
         self.timing = Timing(control_freq)
