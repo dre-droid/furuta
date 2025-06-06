@@ -1,0 +1,102 @@
+import RPi.GPIO as GPIO
+import spidev
+import time
+import numpy as np
+from furuta.robot import Robot
+
+class PolimiRobot(Robot):
+    def __init__(self, 
+                 motor_encoder_cpr=211.2,
+                 pendulum_encoder_cpr=4096, #might be wrong
+                 pwm_freq=15000):
+        super().__init__(None, motor_encoder_cpr, pendulum_encoder_cpr)  # No serial device needed
+        
+        # Motor pins
+        self.IN1_PIN = 25
+        self.IN2_PIN = 24
+        self.D2_PIN = 12
+        self.EN_PIN = 6
+        self.SF_PIN = 2
+        
+        # Setup GPIO
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
+        self._setup_gpio()
+        
+        # Setup encoders
+        self._setup_encoders()
+        
+        # Initialize PWM
+        self.pwm = GPIO.PWM(self.D2_PIN, pwm_freq)
+        self.pwm.start(0)
+        
+        # Enable motor driver
+        GPIO.output(self.EN_PIN, GPIO.HIGH)
+        
+    def _setup_gpio(self):
+        GPIO.setup(self.IN1_PIN, GPIO.OUT)
+        GPIO.setup(self.IN2_PIN, GPIO.OUT)
+        GPIO.setup(self.D2_PIN, GPIO.OUT)
+        GPIO.setup(self.EN_PIN, GPIO.OUT)
+        GPIO.setup(self.SF_PIN, GPIO.IN)
+        
+    def _setup_encoders(self):
+        # Setup motor encoder
+        self.motor_spi = spidev.SpiDev()
+        self.motor_spi.open(1, 0)
+        self.motor_spi.max_speed_hz = 1000000
+        self.motor_spi.mode = 0b00
+        self._setup_ls7366r(self.motor_spi)
+        
+        # Setup pendulum encoder
+        self.pendulum_spi = spidev.SpiDev()
+        self.pendulum_spi.open(0, 0)
+        self.pendulum_spi.max_speed_hz = 1000000
+        self.pendulum_spi.mode = 0b00
+        self._setup_ls7366r(self.pendulum_spi)
+        
+    def _setup_ls7366r(self, spi):
+        spi.xfer2([0x88, 0b00000001])  # WR_MDR0: 4X quadrature
+        spi.xfer2([0x90, 0b00000000])  # WR_MDR1: 4-byte counter
+        spi.xfer2([0x20])  # CLR_CNTR
+        
+    def _read_encoder(self, spi):
+        resp = spi.xfer2([0x60, 0x00, 0x00, 0x00, 0x00])
+        return (resp[1] << 24) | (resp[2] << 16) | (resp[3] << 8) | resp[4]
+        
+    def step(self, motor_command: float):
+        # Check for faults
+        if GPIO.input(self.SF_PIN) == GPIO.LOW:
+            raise RuntimeError("Motor driver fault detected!")
+            
+        # Convert motor command (-1 to 1) to PWM and direction
+        duty_cycle = min(abs(motor_command) * 100, 100)
+        direction = motor_command < 0
+        
+        # Set direction
+        GPIO.output(self.IN1_PIN, GPIO.HIGH if direction else GPIO.LOW)
+        GPIO.output(self.IN2_PIN, GPIO.LOW if direction else GPIO.HIGH)
+        
+        # Set PWM
+        self.pwm.ChangeDutyCycle(duty_cycle)
+        
+        # Read encoders
+        motor_count = self._read_encoder(self.motor_spi)
+        pendulum_count = self._read_encoder(self.pendulum_spi)
+        
+        # Convert counts to angles
+        motor_angle = 2 * np.pi * motor_count / self.motor_encoder_cpr
+        pendulum_angle = 2 * np.pi * pendulum_count / self.pendulum_encoder_cpr
+        
+        return motor_angle, pendulum_angle, time.time()
+        
+    def reset_encoders(self):
+        self.motor_spi.xfer2([0x20])  # CLR_CNTR
+        self.pendulum_spi.xfer2([0x20])  # CLR_CNTR
+        
+    def close(self):
+        self.pwm.stop()
+        GPIO.output(self.EN_PIN, GPIO.LOW)
+        GPIO.cleanup()
+        self.motor_spi.close()
+        self.pendulum_spi.close()
