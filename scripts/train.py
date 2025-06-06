@@ -84,6 +84,11 @@ def main(cfg: DictConfig):
         # TODO seems like weird things happen when we use the same env for training and eval
         # e.g we get stuck in eval mode
         eval_env = copy.deepcopy(env)
+        if cfg.n_envs > 1:
+            eval_env = SubprocVecEnv([lambda: copy.deepcopy(eval_env) for _ in range(cfg.n_envs)])
+        else:
+            eval_env = DummyVecEnv([lambda: eval_env])
+
         if cfg.evaluation.early_stopping_reward_threshold is not None:
             callback_on_best = StopTrainingOnRewardThreshold(
                 reward_threshold=cfg.evaluation.early_stopping_reward_threshold, verbose=1
@@ -114,7 +119,7 @@ def main(cfg: DictConfig):
 
     # only save last video
     if cfg.capture_video:
-        video_length = 500
+        video_length = 10000
         env = DummyVecEnv([lambda: env])
         env = VecVideoRecorder(
             env,
