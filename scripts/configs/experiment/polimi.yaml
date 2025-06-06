@@ -1,0 +1,19 @@
+# scripts/configs/experiment/polimi.yaml
+# @package _global_
+defaults:
+  - override /env: polimi
+  - override /wrappers: real_wrappers
+  - override /algo: sac_real
+
+total_timesteps: 100_000
+progress_bar: True
+debug: True
+n_envs: 1
+model_artifact: null
+capture_video: False
+
+evaluation:
+  early_stopping_reward_threshold: null
+  deterministic: True
+  n_eval_episodes: 10
+  eval_freq: 10_000

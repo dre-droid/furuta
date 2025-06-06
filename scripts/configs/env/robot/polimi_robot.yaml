@@ -1,0 +1,5 @@
+# scripts/configs/env/robot/polimi_robot.yaml
+_target_: furuta.polimi_robot.PolimiRobot
+motor_encoder_cpr: 211.2
+pendulum_encoder_cpr: 4096
+pwm_freq: 15000x
