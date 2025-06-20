@@ -6,10 +6,12 @@ from furuta.robot import Robot
 
 class PolimiRobot(Robot):
     def __init__(self, 
-                 motor_encoder_cpr=211.2,
-                 pendulum_encoder_cpr=4096, #might be wrong
+                 motor_encoder_cpr=48,
+                 pendulum_encoder_cpr=2048, #might be wrong
                  pwm_freq=15000):
-        super().__init__(None, motor_encoder_cpr, pendulum_encoder_cpr)  # No serial device needed
+        # Initialize GPIO first, before calling parent constructor
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
         
         # Motor pins
         self.IN1_PIN = 25
@@ -18,9 +20,7 @@ class PolimiRobot(Robot):
         self.EN_PIN = 6
         self.SF_PIN = 2
         
-        # Setup GPIO
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
+        # Setup GPIO pins
         self._setup_gpio()
         
         # Setup encoders
@@ -32,6 +32,9 @@ class PolimiRobot(Robot):
         
         # Enable motor driver
         GPIO.output(self.EN_PIN, GPIO.HIGH)
+        
+        # Call parent constructor after GPIO setup
+        super().__init__(None, motor_encoder_cpr, pendulum_encoder_cpr)  # No serial device needed
         
     def _setup_gpio(self):
         GPIO.setup(self.IN1_PIN, GPIO.OUT)
@@ -56,7 +59,15 @@ class PolimiRobot(Robot):
         self._setup_ls7366r(self.pendulum_spi)
         
     def _setup_ls7366r(self, spi):
-        spi.xfer2([0x88, 0b00000001])  # WR_MDR0: 4X quadrature
+        # Use the same configuration as the working scripts
+        # For motor encoder (bus 1): MDR0_CONF = 0b00000001 (4X quadrature)
+        # For pendulum encoder (bus 0): MDR0_CONF = 0b00000011 (4X quadrature, free-running)
+        if spi == self.motor_spi:
+            # Motor encoder configuration
+            spi.xfer2([0x88, 0b00000001])  # WR_MDR0: 4X quadrature
+        else:
+            # Pendulum encoder configuration  
+            spi.xfer2([0x88, 0b00000011])  # WR_MDR0: 4X quadrature, free-running
         spi.xfer2([0x90, 0b00000000])  # WR_MDR1: 4-byte counter
         spi.xfer2([0x20])  # CLR_CNTR
         
