@@ -9,16 +9,15 @@ class PolimiRobot(Robot):
                  motor_encoder_cpr=48,
                  pendulum_encoder_cpr=2048, #might be wrong
                  pwm_freq=15000):
-        # Initialize GPIO first, before calling parent constructor
-        GPIO.setmode(GPIO.BCM)
-        GPIO.setwarnings(False)
-        
         # Motor pins
         self.IN1_PIN = 25
         self.IN2_PIN = 24
         self.D2_PIN = 12
         self.EN_PIN = 6
         self.SF_PIN = 2
+        
+        # Initialize GPIO with error handling
+        self._init_gpio()
         
         # Setup GPIO pins
         self._setup_gpio()
@@ -36,12 +35,30 @@ class PolimiRobot(Robot):
         # Call parent constructor after GPIO setup
         super().__init__(None, motor_encoder_cpr, pendulum_encoder_cpr)  # No serial device needed
         
+    def _init_gpio(self):
+        """Initialize GPIO with proper error handling"""
+        try:
+            # Clean up any existing GPIO state
+            GPIO.cleanup()
+        except:
+            pass  # Ignore cleanup errors
+            
+        try:
+            GPIO.setmode(GPIO.BCM)
+            GPIO.setwarnings(False)
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize GPIO: {e}")
+        
     def _setup_gpio(self):
-        GPIO.setup(self.IN1_PIN, GPIO.OUT)
-        GPIO.setup(self.IN2_PIN, GPIO.OUT)
-        GPIO.setup(self.D2_PIN, GPIO.OUT)
-        GPIO.setup(self.EN_PIN, GPIO.OUT)
-        GPIO.setup(self.SF_PIN, GPIO.IN)
+        """Setup individual GPIO pins"""
+        try:
+            GPIO.setup(self.IN1_PIN, GPIO.OUT)
+            GPIO.setup(self.IN2_PIN, GPIO.OUT)
+            GPIO.setup(self.D2_PIN, GPIO.OUT)
+            GPIO.setup(self.EN_PIN, GPIO.OUT)
+            GPIO.setup(self.SF_PIN, GPIO.IN)
+        except Exception as e:
+            raise RuntimeError(f"Failed to setup GPIO pins: {e}")
         
     def _setup_encoders(self):
         # Setup motor encoder
