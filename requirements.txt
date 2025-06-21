@@ -28,6 +28,10 @@ crocoddyl>=2.0.2,<3.0.0
 # You may need to install these separately based on your platform
 jax-metal>=0.0.5,<0.1.0; platform_system=="Darwin"
 
+# Raspberry Pi dependencies
+lgpio>=0.0.1,<0.1.0
+spidev>=3.5,<4.0
+
 # Git dependencies - install these separately after main packages
  stable-baselines3-contrib @ git+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
  onshape-to-robot @ git+https://github.com/rhoban/onshape-to-robot.git

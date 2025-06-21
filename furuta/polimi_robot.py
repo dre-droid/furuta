@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+import lgpio
 import spidev
 import time
 import numpy as np
@@ -26,11 +26,11 @@ class PolimiRobot(Robot):
         self._setup_encoders()
         
         # Initialize PWM
-        self.pwm = GPIO.PWM(self.D2_PIN, pwm_freq)
-        self.pwm.start(0)
+        self.pwm_freq = pwm_freq
+        self.pwm_handle = lgpio.tx_pwm(self.h, self.D2_PIN, pwm_freq, 0)
         
         # Enable motor driver
-        GPIO.output(self.EN_PIN, GPIO.HIGH)
+        lgpio.gpio_write(self.h, self.EN_PIN, 1)
         
         # Call parent constructor after GPIO setup
         super().__init__(None, motor_encoder_cpr, pendulum_encoder_cpr)  # No serial device needed
@@ -38,25 +38,23 @@ class PolimiRobot(Robot):
     def _init_gpio(self):
         """Initialize GPIO with proper error handling"""
         try:
-            # Clean up any existing GPIO state
-            GPIO.cleanup()
-        except:
-            pass  # Ignore cleanup errors
-            
-        try:
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setwarnings(False)
+            self.h = lgpio.gpiochip_open(0)
+            if self.h < 0:
+                raise RuntimeError("Failed to open GPIO chip")
         except Exception as e:
             raise RuntimeError(f"Failed to initialize GPIO: {e}")
         
     def _setup_gpio(self):
         """Setup individual GPIO pins"""
         try:
-            GPIO.setup(self.IN1_PIN, GPIO.OUT)
-            GPIO.setup(self.IN2_PIN, GPIO.OUT)
-            GPIO.setup(self.D2_PIN, GPIO.OUT)
-            GPIO.setup(self.EN_PIN, GPIO.OUT)
-            GPIO.setup(self.SF_PIN, GPIO.IN)
+            # Setup output pins
+            lgpio.gpio_claim_output(self.h, self.IN1_PIN)
+            lgpio.gpio_claim_output(self.h, self.IN2_PIN)
+            lgpio.gpio_claim_output(self.h, self.D2_PIN)
+            lgpio.gpio_claim_output(self.h, self.EN_PIN)
+            
+            # Setup input pin
+            lgpio.gpio_claim_input(self.h, self.SF_PIN)
         except Exception as e:
             raise RuntimeError(f"Failed to setup GPIO pins: {e}")
         
@@ -94,7 +92,7 @@ class PolimiRobot(Robot):
         
     def step(self, motor_command: float):
         # Check for faults
-        if GPIO.input(self.SF_PIN) == GPIO.LOW:
+        if lgpio.gpio_read(self.h, self.SF_PIN) == 0:
             raise RuntimeError("Motor driver fault detected!")
             
         # Convert motor command (-1 to 1) to PWM and direction
@@ -102,11 +100,11 @@ class PolimiRobot(Robot):
         direction = motor_command < 0
         
         # Set direction
-        GPIO.output(self.IN1_PIN, GPIO.HIGH if direction else GPIO.LOW)
-        GPIO.output(self.IN2_PIN, GPIO.LOW if direction else GPIO.HIGH)
+        lgpio.gpio_write(self.h, self.IN1_PIN, 1 if direction else 0)
+        lgpio.gpio_write(self.h, self.IN2_PIN, 0 if direction else 1)
         
-        # Set PWM
-        self.pwm.ChangeDutyCycle(duty_cycle)
+        # Set PWM duty cycle
+        lgpio.tx_pwm(self.h, self.D2_PIN, self.pwm_freq, duty_cycle)
         
         # Read encoders
         motor_count = self._read_encoder(self.motor_spi)
@@ -123,8 +121,15 @@ class PolimiRobot(Robot):
         self.pendulum_spi.xfer2([0x20])  # CLR_CNTR
         
     def close(self):
-        self.pwm.stop()
-        GPIO.output(self.EN_PIN, GPIO.LOW)
-        GPIO.cleanup()
+        # Stop PWM
+        lgpio.tx_pwm(self.h, self.D2_PIN, self.pwm_freq, 0)
+        
+        # Disable motor driver
+        lgpio.gpio_write(self.h, self.EN_PIN, 0)
+        
+        # Close GPIO
+        lgpio.gpiochip_close(self.h)
+        
+        # Close SPI connections
         self.motor_spi.close()
         self.pendulum_spi.close()
