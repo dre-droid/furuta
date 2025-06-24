@@ -1,7 +1,6 @@
-# scripts/configs/experiment/polimi.yaml
 # @package _global_
 defaults:
-  - override /env: polimi
+  - override /env: real
   - override /wrappers: real_wrappers
   - override /algo: sac_real
 
