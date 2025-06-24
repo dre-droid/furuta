@@ -8,7 +8,7 @@ defaults:
 
 total_timesteps: 500_000
 progress_bar: True
-n_envs: 12
+n_envs: 1
 
 # eval & early stopping
 evaluation:
