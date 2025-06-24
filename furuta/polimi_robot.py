@@ -29,6 +29,10 @@ class PolimiRobot:
         # Setup encoders
         self._setup_encoders()
         
+        # Store initial encoder values for relative angle calculation
+        self.motor_initial_count = self._read_encoder(self.motor_spi)
+        self.pendulum_initial_count = self._read_encoder(self.pendulum_spi)
+        
         # Initialize PWM
         self.pwm_freq = pwm_freq
         self.pwm_handle = lgpio.tx_pwm(self.h, self.D2_PIN, pwm_freq, 0)
@@ -89,7 +93,11 @@ class PolimiRobot:
         
     def _read_encoder(self, spi):
         resp = spi.xfer2([0x60, 0x00, 0x00, 0x00, 0x00])
-        return (resp[1] << 24) | (resp[2] << 16) | (resp[3] << 8) | resp[4]
+        raw = (resp[1] << 24) | (resp[2] << 16) | (resp[3] << 8) | resp[4]
+        # Convert to signed 32-bit integer
+        if raw & 0x80000000:
+            raw = raw - 0x100000000
+        return raw
         
     def step(self, motor_command: float):
         # Check for faults
@@ -111,15 +119,22 @@ class PolimiRobot:
         motor_count = self._read_encoder(self.motor_spi)
         pendulum_count = self._read_encoder(self.pendulum_spi)
         
+        # Calculate relative counts
+        rel_motor_count = motor_count - self.motor_initial_count
+        rel_pendulum_count = pendulum_count - self.pendulum_initial_count
+        
         # Convert counts to angles
-        motor_angle = 2 * np.pi * motor_count / self.motor_encoder_cpr
-        pendulum_angle = 2 * np.pi * pendulum_count / self.pendulum_encoder_cpr
+        motor_angle = 2 * np.pi * rel_motor_count / self.motor_encoder_cpr
+        pendulum_angle = 2 * np.pi * rel_pendulum_count / self.pendulum_encoder_cpr
         
         return motor_angle, pendulum_angle, time.time()
         
     def reset_encoders(self):
         self.motor_spi.xfer2([0x20])  # CLR_CNTR
         self.pendulum_spi.xfer2([0x20])  # CLR_CNTR
+        # After clearing, update initial counts to new zeroed values
+        self.motor_initial_count = self._read_encoder(self.motor_spi)
+        self.pendulum_initial_count = self._read_encoder(self.pendulum_spi)
         
     def close(self):
         # Stop PWM
