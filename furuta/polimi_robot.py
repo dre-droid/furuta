@@ -2,13 +2,12 @@ import lgpio
 import spidev
 import time
 import numpy as np
-from furuta.robot import Robot
 
-class PolimiRobot(Robot):
+class PolimiRobot:
     def __init__(self, 
                  motor_encoder_cpr=48,
-                 pendulum_encoder_cpr=2048, #might be wrong
-                 pwm_freq=15000):
+                 pendulum_encoder_cpr=5120 * 4, #might be wrong
+                 pwm_freq=10000):
         # Motor pins
         self.IN1_PIN = 25
         self.IN2_PIN = 24
@@ -16,8 +15,13 @@ class PolimiRobot(Robot):
         self.EN_PIN = 6
         self.SF_PIN = 2
         
-        # Initialize GPIO with error handling
+        # Store encoder parameters
+        self.motor_encoder_cpr = motor_encoder_cpr
+        self.pendulum_encoder_cpr = pendulum_encoder_cpr
+        
+        # Initialize GPIO and get pwm handle
         self._init_gpio()
+        print("Self.h: ", self.h)
         
         # Setup GPIO pins
         self._setup_gpio()
@@ -31,9 +35,6 @@ class PolimiRobot(Robot):
         
         # Enable motor driver
         lgpio.gpio_write(self.h, self.EN_PIN, 1)
-        
-        # Call parent constructor after GPIO setup
-        super().__init__(None, motor_encoder_cpr, pendulum_encoder_cpr)  # No serial device needed
         
     def _init_gpio(self):
         """Initialize GPIO with proper error handling"""
