@@ -6,7 +6,6 @@ import numpy as np
 from simple_pid import PID
 
 from furuta.rl.envs.furuta_base import FurutaBase
-from furuta.robot import Robot
 from furuta.utils import ALPHA, ALPHA_DOT, THETA, THETA_DOT, VelocityFilter
 
 MAX_RESET_TIME = 7  # seconds
@@ -20,7 +19,7 @@ ALPHA_THRESH = np.cos(
 class FurutaReal(FurutaBase):
     def __init__(
         self,
-        robot: Robot,
+        robot,  # Any robot that implements step(), reset_encoders(), close()
         control_freq=100,
         reward="cos_alpha",
         angle_limits=None,
