@@ -20,7 +20,7 @@ GPIO.setup(EN_PIN, GPIO.OUT)
 GPIO.setup(SF_PIN, GPIO.IN)
 
 #Initialize PWM
-pwm = GPIO.PWM(D2_PIN, 15000)  # 10 kHz frequency
+pwm = GPIO.PWM(D2_PIN, 10000)  # 10 kHz frequency
 pwm.start(0)
 
 # Enable motor driver
