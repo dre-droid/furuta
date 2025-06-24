@@ -2,8 +2,9 @@ import lgpio
 import spidev
 import time
 import numpy as np
+from furuta.robot import Robot 
 
-class PolimiRobot:
+class PolimiRobot(Robot):
     def __init__(self, 
                  motor_encoder_cpr=48,
                  pendulum_encoder_cpr=5120 * 4, #might be wrong
