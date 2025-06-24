@@ -1,6 +1,6 @@
 # @package _global_
 defaults:
-  - override /env: real
+  - override /env: polimi
   - override /wrappers: real_wrappers
   - override /algo: sac_real
 
