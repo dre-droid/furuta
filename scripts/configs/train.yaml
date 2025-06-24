@@ -22,8 +22,8 @@ seed: 1
 cudnn_deterministic: True
 
 # plumbing/misc
-debug: False
-capture_video: True
+debug: True
+capture_video: False
 wandb:
   entity: null
   project: furuta2
