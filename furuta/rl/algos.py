@@ -16,7 +16,7 @@ class BaseAlgoWrapper:
 
 
 class SAC(BaseAlgoWrapper, stable_baselines3.SAC):
-    pass
+    pass  
 
 
 class TQC(BaseAlgoWrapper, sb3_contrib.TQC):

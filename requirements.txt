@@ -25,8 +25,9 @@ crocoddyl>=2.0.2,<3.0.0
 
 # Platform-specific dependencies
 # Note: jax-metal is only for macOS (darwin)
-# You may need to install these separately based on your platform
-jax-metal>=0.0.5,<0.1.0; platform_system=="Darwin"
+# On Raspberry Pi (Linux/ARM), use jax and tensorflow-probability for JAX support
+tensorflow-probability[jax]>=0.18.0; platform_system=="Linux"
+jax[cpu]>=0.4.13; platform_system=="Linux"
 
 # Raspberry Pi dependencies
 rpi-lgpio
