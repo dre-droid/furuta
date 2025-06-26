@@ -1,9 +1,10 @@
 defaults:
   - _self_
-  - env: real
-  - wrappers: real_wrappers
+  - env: ???
+  - wrappers: ???
 
 wandb_project: "furuta2"
-model_artifact: "model:v64"
+model_artifact: "model:latest"
 render: False
 nb_episodes: 3
+record_video: True  # Set to True to record video of the first episode

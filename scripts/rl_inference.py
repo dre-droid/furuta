@@ -3,7 +3,7 @@ import os
 import hydra
 import numpy as np
 from omegaconf import DictConfig
-from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.vec_env import DummyVecEnv, VecVideoRecorder
 
 import wandb
 from furuta.rl.wrappers import MCAPLogger
@@ -36,27 +36,42 @@ def main(cfg: DictConfig):
 
     env = DummyVecEnv([lambda: env])
 
+    # Add video recording if specified
+    if cfg.record_video:
+        video_dir = f"videos/{run.id}"
+        os.makedirs(video_dir, exist_ok=True)
+        env = VecVideoRecorder(
+            env,
+            video_dir,
+            record_video_trigger=lambda x: x == 0,  # Record first episode
+            video_length=10000,  # Max video length
+            name_prefix="inference"
+        )
+
     model = hydra.utils.instantiate(producer_cfg.algo, env=env, _convert_="all")
 
     model = model.load(os.path.join(artifact_dir, "model.zip"))
 
     ep_returns = []
-    for _ in range(cfg.nb_episodes):
+    for episode in range(cfg.nb_episodes):
         ep_return = 0
         obs = env.reset()
+        step_count = 0
         while True:
             action, _ = model.predict(obs, deterministic=True)
             obs, reward, done, _ = env.step(action)
-            ep_return += reward
+            ep_return += reward[0] if isinstance(reward, np.ndarray) else reward
+            step_count += 1
             if cfg.render:
                 env.render()
-            if done:
+            if done[0] if isinstance(done, np.ndarray) else done:
                 ep_returns.append(ep_return)
+                print(f"Episode {episode + 1}: Return = {ep_return:.2f}, Steps = {step_count}")
                 break
 
     print(f"Returns: {ep_returns}")
-    print(f"Mean return: {np.mean(ep_returns)}")
-    print(f"Std return: {np.std(ep_returns)}")
+    print(f"Mean return: {np.mean(ep_returns):.2f}")
+    print(f"Std return: {np.std(ep_returns):.2f}")
 
     # Save the video
     env.close()
