@@ -30,7 +30,7 @@ wandb:
 
 # resume training: load replay buffer and/or model
 replay_buffer_artifact: null
-model_artifact: null
+model_artifact: "armandpl/furuta/sac_model:v326"
 
 # logging
 save_model: True
