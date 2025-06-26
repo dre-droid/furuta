@@ -11,7 +11,7 @@ pygame>=2.5.2,<3.0.0
 ipykernel>=6.26.0,<7.0.0
 matplotlib>=3.7.3,<3.8.0
 pre-commit>=3.5.0,<4.0.0
-#stable-baselines3>=2.2.1,<2.3.0
+stable-baselines3>=2.2.1,<2.3.0; platform_system=="Darwin"
 wandb>=0.16.2,<0.17.0
 opencv-python>=4.9.0.80,<4.10.0
 hydra-core>=1.3.2,<1.4.0
@@ -28,10 +28,13 @@ crocoddyl>=2.0.2,<3.0.0
 # On Raspberry Pi (Linux/ARM), use jax and tensorflow-probability for JAX support
 tensorflow-probability[jax]>=0.18.0; platform_system=="Linux"
 jax[cpu]>=0.4.13; platform_system=="Linux"
+tensorflow-probability[jax]==0.22.0; platform_system=="Darwin"
+jax[cpu]>=0.4.13; platform_system=="Darwin"
+jax-metal>=0.0.4; platform_system=="Darwin"
 
 # Raspberry Pi dependencies
-rpi-lgpio
-spidev>=3.5,<4.0
+rpi-lgpio; platform_system=="Linux"
+spidev>=3.5,<4.0; platform_system=="Linux"
 
 # Git dependencies - install these separately after main packages
 # stable-baselines3-contrib @ git+https://github.com/Stable-Baselines-Team/stable-baselines3-contrib
