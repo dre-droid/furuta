@@ -83,11 +83,10 @@ def main(cfg: DictConfig):
     if cfg.evaluation.eval_freq is not None:
         # TODO seems like weird things happen when we use the same env for training and eval
         # e.g we get stuck in eval mode
-        eval_env = copy.deepcopy(env)
-        if cfg.n_envs > 1:
-            eval_env = SubprocVecEnv([lambda: copy.deepcopy(eval_env) for _ in range(cfg.n_envs)])
+        if isinstance(env.unwrapped, FurutaReal):
+            eval_env = env  # Use the same env, or skip evaluation
         else:
-            eval_env = DummyVecEnv([lambda: eval_env])
+            eval_env = copy.deepcopy(env)
 
         if cfg.evaluation.early_stopping_reward_threshold is not None:
             callback_on_best = StopTrainingOnRewardThreshold(
