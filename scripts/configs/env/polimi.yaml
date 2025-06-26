@@ -6,5 +6,5 @@ defaults:
 _target_: furuta.rl.envs.furuta_real.FurutaReal
 control_freq: 30  # You might want to adjust this based on your hardware capabilities
 reward: "cos_alpha"
-angle_limits: [null, 12]  # You might want to adjust these limits based on your hardware
-speed_limits: [50, null]  # You might want to adjust these limits based on your hardware
+angle_limits: [null, null]  # degrees
+speed_limits: [50, null]  # revolutions per second
