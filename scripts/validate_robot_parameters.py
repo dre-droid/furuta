@@ -167,12 +167,14 @@ class RobotParameterValidator:
         
         try:
             import select
-            import tty
             import termios
+            import sys
             
-            # Save terminal settings
-            old_settings = termios.tcgetattr(sys.stdin)
-            tty.cbreak(sys.stdin.fileno())
+            fd = sys.stdin.fileno()
+            old_settings = termios.tcgetattr(fd)
+            new_settings = termios.tcgetattr(fd)
+            new_settings[3] = new_settings[3] & ~termios.ICANON & ~termios.ECHO
+            termios.tcsetattr(fd, termios.TCSADRAIN, new_settings)
             
             while True:
                 # Collect data
@@ -212,7 +214,7 @@ class RobotParameterValidator:
             pass
         finally:
             # Restore terminal settings
-            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, old_settings)
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
             # Stop motor
             if self.robot:
                 self.robot.step(0.0)
