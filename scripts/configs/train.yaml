@@ -8,7 +8,7 @@ defaults:
 
 total_timesteps: 500_000
 progress_bar: True
-n_envs: 1
+n_envs: 12
 
 # eval & early stopping
 evaluation:
@@ -23,14 +23,14 @@ cudnn_deterministic: True
 
 # plumbing/misc
 debug: True
-capture_video: False
+capture_video: True
 wandb:
   entity: null
   project: furuta2
 
 # resume training: load replay buffer and/or model
 replay_buffer_artifact: null
-model_artifact: "armandpl/furuta/sac_model:v326"
+model_artifact: null
 
 # logging
 save_model: True

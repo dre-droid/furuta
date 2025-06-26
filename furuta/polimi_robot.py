@@ -22,7 +22,6 @@ class PolimiRobot(Robot):
         
         # Initialize GPIO and get pwm handle
         self._init_gpio()
-        print("Self.h: ", self.h)
         
         # Setup GPIO pins
         self._setup_gpio()
@@ -80,7 +79,6 @@ class PolimiRobot(Robot):
         self._setup_ls7366r(self.pendulum_spi)
         
     def _setup_ls7366r(self, spi):
-        # Use the same configuration as the working scripts
         # For motor encoder (bus 1): MDR0_CONF = 0b00000001 (4X quadrature)
         # For pendulum encoder (bus 0): MDR0_CONF = 0b00000011 (4X quadrature, free-running)
         if spi == self.motor_spi:

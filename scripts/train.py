@@ -1,6 +1,5 @@
 import copy
 import logging
-from pathlib import Path
 
 import hydra
 from omegaconf import DictConfig, OmegaConf, open_dict
@@ -73,19 +72,7 @@ def main(cfg: DictConfig):
 
     # load model/replay buffer
     if cfg.model_artifact:
-        # Try to load model.zip first, then fallback to sac.zip for compatibility
-        artifact = wandb.use_artifact(cfg.model_artifact)
-        artifact_dir = Path(artifact.download())
-        
-        model_path = artifact_dir / "model.zip"
-        if model_path.is_file():
-            model.load(str(model_path))
-        else:
-            sac_path = artifact_dir / "sac.zip"
-            if sac_path.is_file():
-                model.load(str(sac_path))
-            else:
-                raise FileNotFoundError(f"{cfg.model_artifact} contains neither 'model.zip' nor 'sac.zip'")
+        model.load(download_artifact_file(cfg.model_artifact, "model.zip"))
 
     if cfg.replay_buffer_artifact:
         rb_path = download_artifact_file(cfg.replay_buffer_artifact, "buffer.pkl")
