@@ -4,7 +4,7 @@ defaults:
   - robot: polimi_robot
 
 _target_: furuta.rl.envs.furuta_real.FurutaReal
-control_freq: 30              # Control frequency (Hz)
+control_freq: 40              # Control frequency (Hz)
 reward: "cos_alpha"           # Reward function selection
 angle_limits: [null, 6]       # Angle limits (both directions) [theta, alpha] in radians
 speed_limits: [70, null]      # Speed limits [theta_dot, alpha_dot] in rad/s
