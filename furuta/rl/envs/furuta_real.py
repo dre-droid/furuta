@@ -1,6 +1,7 @@
 import logging
 from time import sleep
 from typing import Optional
+import time
 
 import numpy as np
 from simple_pid import PID
@@ -25,12 +26,24 @@ class FurutaReal(FurutaBase):
         angle_limits=None,
         speed_limits=None,
         motor_stop_pid=[0.04, 0.0, 0.001],
+        enable_episode_logging=True,
+        log_frequency=10,  # Log every N steps
     ):
         super().__init__(control_freq, reward, angle_limits, speed_limits)
         self.motor_stop_pid = motor_stop_pid
+        self.enable_episode_logging = enable_episode_logging
+        self.log_frequency = log_frequency
 
         self.robot = robot
         self._state = None
+        
+        # Episode logging variables
+        self.episode_step = 0
+        self.episode_rewards = []
+        self.episode_states = []
+        self.episode_actions = []
+        self.episode_start_time = None
+        self.episode_number = 0
 
     def _init_vel_filt(self):
         self.vel_filt = VelocityFilter(2, dt=self.timing.dt)
@@ -44,13 +57,128 @@ class FurutaReal(FurutaBase):
         state = np.concatenate([pos, vel])
         self._state = state
 
+    def _log_episode_step(self, action, reward):
+        """Log current step information for episode tracking"""
+        if not self.enable_episode_logging:
+            return
+            
+        # Store step data
+        self.episode_rewards.append(reward)
+        self.episode_states.append(self._state.copy())
+        self.episode_actions.append(action)
+        
+        # Log every N steps
+        if self.episode_step % self.log_frequency == 0:
+            motor_angle_deg = np.rad2deg(self._state[THETA])
+            pendulum_angle_deg = np.rad2deg(self._state[ALPHA])
+            motor_speed_rps = self._state[THETA_DOT] / (2 * np.pi)
+            pendulum_speed_rps = self._state[ALPHA_DOT] / (2 * np.pi)
+            
+            logging.info(
+                f"Episode {self.episode_number}, Step {self.episode_step}: "
+                f"Motor={motor_angle_deg:6.1f}°, Pendulum={pendulum_angle_deg:6.1f}°, "
+                f"Motor_speed={motor_speed_rps:5.2f} rev/s, Pendulum_speed={pendulum_speed_rps:5.2f} rev/s, "
+                f"Action={action[0]:6.3f}, Reward={reward:6.4f}"
+            )
+        
+        self.episode_step += 1
+
+    def _log_episode_summary(self, terminated, truncated):
+        """Log episode summary statistics"""
+        if not self.enable_episode_logging or len(self.episode_rewards) == 0:
+            return
+            
+        episode_duration = time.time() - self.episode_start_time
+        total_reward = sum(self.episode_rewards)
+        mean_reward = np.mean(self.episode_rewards)
+        max_reward = np.max(self.episode_rewards)
+        min_reward = np.min(self.episode_rewards)
+        
+        # Calculate state statistics
+        states_array = np.array(self.episode_states)
+        motor_angles_deg = np.rad2deg(states_array[:, THETA])
+        pendulum_angles_deg = np.rad2deg(states_array[:, ALPHA])
+        motor_speeds_rps = states_array[:, THETA_DOT] / (2 * np.pi)
+        pendulum_speeds_rps = states_array[:, ALPHA_DOT] / (2 * np.pi)
+        
+        # Check for state violations
+        angle_limits_violated = False
+        speed_limits_violated = False
+        
+        if self.angle_limits is not None:
+            if (np.any(np.abs(pendulum_angles_deg) > np.rad2deg(self.angle_limits[1])) or
+                np.any(np.abs(motor_angles_deg) > np.rad2deg(self.angle_limits[0]))):
+                angle_limits_violated = True
+                
+        if self.speed_limits is not None:
+            if (np.any(np.abs(motor_speeds_rps) > self.speed_limits[0]) or
+                np.any(np.abs(pendulum_speeds_rps) > self.speed_limits[1])):
+                speed_limits_violated = True
+        
+        # Log episode summary
+        logging.info("=" * 80)
+        logging.info(f"EPISODE {self.episode_number} SUMMARY:")
+        logging.info(f"  Duration: {episode_duration:.2f}s ({self.episode_step} steps)")
+        logging.info(f"  Total Reward: {total_reward:.4f}")
+        logging.info(f"  Mean Reward: {mean_reward:.4f}")
+        logging.info(f"  Max Reward: {max_reward:.4f}")
+        logging.info(f"  Min Reward: {min_reward:.4f}")
+        logging.info(f"  Termination: {'State bounds' if terminated else 'Time limit' if truncated else 'Unknown'}")
+        
+        logging.info(f"  Motor Angle: {np.mean(motor_angles_deg):6.1f}° ± {np.std(motor_angles_deg):5.1f}° "
+                    f"[{np.min(motor_angles_deg):6.1f}°, {np.max(motor_angles_deg):6.1f}°]")
+        logging.info(f"  Pendulum Angle: {np.mean(pendulum_angles_deg):6.1f}° ± {np.std(pendulum_angles_deg):5.1f}° "
+                    f"[{np.min(pendulum_angles_deg):6.1f}°, {np.max(pendulum_angles_deg):6.1f}°]")
+        logging.info(f"  Motor Speed: {np.mean(motor_speeds_rps):5.2f} ± {np.std(motor_speeds_rps):5.2f} rev/s "
+                    f"[{np.min(motor_speeds_rps):5.2f}, {np.max(motor_speeds_rps):5.2f}]")
+        logging.info(f"  Pendulum Speed: {np.mean(pendulum_speeds_rps):5.2f} ± {np.std(pendulum_speeds_rps):5.2f} rev/s "
+                    f"[{np.min(pendulum_speeds_rps):5.2f}, {np.max(pendulum_speeds_rps):5.2f}]")
+        
+        if angle_limits_violated:
+            logging.warning("  ⚠️  ANGLE LIMITS VIOLATED!")
+        if speed_limits_violated:
+            logging.warning("  ⚠️  SPEED LIMITS VIOLATED!")
+            
+        logging.info("=" * 80)
+
+    def step(self, action):
+        """Override step method to add logging"""
+        # Get reward and observation from parent
+        reward = self._reward_func(self._state)
+        obs = self.get_obs()
+        
+        # Update state
+        self._update_state(action[0])
+        
+        # Check termination
+        terminated = not self.state_space.contains(self._state)
+        truncated = False
+        
+        # Log step information
+        self._log_episode_step(action, reward)
+        
+        return obs, reward, terminated, truncated, {}
+
     def reset(
         self,
         seed: Optional[int] = None,
         options: Optional[dict] = None,
     ):
+        # Log previous episode summary if this isn't the first reset
+        if self.episode_start_time is not None:
+            self._log_episode_summary(terminated=False, truncated=False)
+        
+        # Start new episode logging
+        self.episode_number += 1
+        self.episode_step = 0
+        self.episode_rewards = []
+        self.episode_states = []
+        self.episode_actions = []
+        self.episode_start_time = time.time()
+        
+        logging.info(f"Starting Episode {self.episode_number}...")
+        
         super().reset(seed=seed)
-        logging.info("Reset env...")
 
         if self._state is not None:  # if not first reset
             logging.debug("Stopping motor")
@@ -103,4 +231,8 @@ class FurutaReal(FurutaBase):
     #     raise NotImplementedError
 
     def close(self):
+        # Log final episode summary
+        if self.episode_start_time is not None:
+            self._log_episode_summary(terminated=False, truncated=False)
+        
         self.robot.close()
