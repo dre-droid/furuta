@@ -101,18 +101,24 @@ class FurutaReal(FurutaBase):
         motor_speeds_rps = states_array[:, THETA_DOT] / (2 * np.pi)
         pendulum_speeds_rps = states_array[:, ALPHA_DOT] / (2 * np.pi)
         
-        # Check for state violations
+        # Check for state violations using state_max from parent class
         angle_limits_violated = False
         speed_limits_violated = False
         
-        if self.angle_limits is not None:
-            if (np.any(np.abs(pendulum_angles_deg) > np.rad2deg(self.angle_limits[1])) or
-                np.any(np.abs(motor_angles_deg) > np.rad2deg(self.angle_limits[0]))):
+        # Check if any angle limits were violated
+        if not np.isinf(self.state_max[THETA]):
+            if np.any(np.abs(motor_angles_deg) > np.rad2deg(self.state_max[THETA])):
+                angle_limits_violated = True
+        if not np.isinf(self.state_max[ALPHA]):
+            if np.any(np.abs(pendulum_angles_deg) > np.rad2deg(self.state_max[ALPHA])):
                 angle_limits_violated = True
                 
-        if self.speed_limits is not None:
-            if (np.any(np.abs(motor_speeds_rps) > self.speed_limits[0]) or
-                np.any(np.abs(pendulum_speeds_rps) > self.speed_limits[1])):
+        # Check if any speed limits were violated
+        if not np.isinf(self.state_max[THETA_DOT]):
+            if np.any(np.abs(motor_speeds_rps) > self.state_max[THETA_DOT] / (2 * np.pi)):
+                speed_limits_violated = True
+        if not np.isinf(self.state_max[ALPHA_DOT]):
+            if np.any(np.abs(pendulum_speeds_rps) > self.state_max[ALPHA_DOT] / (2 * np.pi)):
                 speed_limits_violated = True
         
         # Log episode summary
