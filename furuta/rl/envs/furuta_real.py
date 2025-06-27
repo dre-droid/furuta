@@ -9,7 +9,7 @@ from simple_pid import PID
 from furuta.rl.envs.furuta_base import FurutaBase
 from furuta.utils import ALPHA, ALPHA_DOT, THETA, THETA_DOT, VelocityFilter
 
-MAX_RESET_TIME = 7  # seconds
+MAX_RESET_TIME = 4  # seconds
 MAX_MOTOR_RESET_TIME = 0.2  # seconds
 RESET_TIME = 0.5
 ALPHA_THRESH = np.cos(
@@ -22,7 +22,7 @@ class FurutaReal(FurutaBase):
         self,
         robot,  # Any robot that implements step(), reset_encoders(), close()
         control_freq=100,
-        reward="cos_alpha",
+        reward="exp_alpha_2",
         angle_limits=None,
         speed_limits=None,
         motor_stop_pid=[0.04, 0.0, 0.001],
