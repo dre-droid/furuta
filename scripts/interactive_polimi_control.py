@@ -38,6 +38,7 @@ class InteractivePolimiControl:
         self.running = True
         self.control_freq = 30  # Hz
         self.reward_function = "cos_alpha"  # Default reward function
+        self.show_all_rewards = True  # Show all reward functions
         
     def initialize_robot(self):
         """Initialize the Polimi robot"""
@@ -78,11 +79,14 @@ class InteractivePolimiControl:
         print("  'r'     : Reset encoders")
         print("  '1-9'   : Set motor strength (1=10%, 9=90%)")
         print("  '0'     : Set motor strength to 100%")
+        print("  't'     : Toggle show all rewards")
+        print("  'i'     : Show reward info")
         print("  'q'     : Quit")
         print("  'h'     : Show this help")
         print("="*60)
         print(f"Current motor strength: {self.motor_strength*100:.0f}%")
-        print(f"Reward function: {self.reward_function}")
+        print(f"Primary reward function: {self.reward_function}")
+        print(f"Show all rewards: {'ON' if self.show_all_rewards else 'OFF'}")
         print("="*60)
     
     def print_status(self, motor_angle, pendulum_angle, motor_speed=None, pendulum_speed=None):
@@ -104,10 +108,31 @@ class InteractivePolimiControl:
         print(f"  Motor command:   {self.motor_command:8.2f}")
         print(f"  Motor strength:  {self.motor_strength*100:8.0f}%")
         
-        # Calculate and display reward
+        # Calculate and display all rewards
         if motor_speed is not None and pendulum_speed is not None:
-            reward = self.calculate_reward(motor_angle, pendulum_angle, motor_speed, pendulum_speed)
-            print(f"  Reward ({self.reward_function}): {reward:8.4f}")
+            state = np.array([motor_angle, pendulum_angle, motor_speed, pendulum_speed])
+            
+            if self.show_all_rewards:
+                print(f"\n🎯 ALL REWARD FUNCTIONS:")
+                for reward_name, reward_func in REWARDS.items():
+                    reward_value = reward_func(state)
+                    # Color code based on reward value
+                    if reward_value > 0.8:
+                        color = "🟢"
+                    elif reward_value > 0.6:
+                        color = "🟡"
+                    elif reward_value > 0.4:
+                        color = "🟠"
+                    else:
+                        color = "🔴"
+                    
+                    # Highlight current primary reward
+                    marker = "★" if reward_name == self.reward_function else " "
+                    print(f"  {marker} {color} {reward_name:12}: {reward_value:8.4f}")
+            else:
+                # Show only primary reward
+                reward = self.calculate_reward(motor_angle, pendulum_angle, motor_speed, pendulum_speed)
+                print(f"  Reward ({self.reward_function}): {reward:8.4f}")
         
         # Show direction indicator
         if self.motor_command > 0:
@@ -118,7 +143,7 @@ class InteractivePolimiControl:
             direction = "● STOP"
         print(f"  Direction:       {direction}")
         
-        # Show reward interpretation
+        # Show reward interpretation for primary reward
         if motor_speed is not None and pendulum_speed is not None:
             reward = self.calculate_reward(motor_angle, pendulum_angle, motor_speed, pendulum_speed)
             if reward > 0.8:
@@ -129,7 +154,33 @@ class InteractivePolimiControl:
                 reward_status = "🟠 FAIR"
             else:
                 reward_status = "🔴 POOR"
-            print(f"  Reward status:   {reward_status}")
+            print(f"  Primary status:  {reward_status}")
+    
+    def print_reward_info(self):
+        """Print information about all reward functions"""
+        print("\n" + "="*60)
+        print("📚 REWARD FUNCTION INFORMATION")
+        print("="*60)
+        print("cos_alpha:")
+        print("  - Rewards pendulum pointing UP (α = 0°)")
+        print("  - Uses cosine function: gentle penalty for deviation")
+        print("  - Also considers motor angle (θ) position")
+        print("  - Range: 0.0 (pendulum down) to 1.0 (pendulum up)")
+        print()
+        print("exp_alpha_2/3/4/6:")
+        print("  - Same target: pendulum pointing UP (α = 0°)")
+        print("  - Uses exponential penalty: harsher for deviations")
+        print("  - Higher numbers = steeper penalty curve")
+        print("  - exp_alpha_6 is very strict, exp_alpha_2 is moderate")
+        print("  - Range: 0.0 (pendulum down) to 1.0 (pendulum up)")
+        print()
+        print("All rewards:")
+        print("  - Multiply alpha reward × theta reward")
+        print("  - Theta reward prefers motor at θ = 0°")
+        print("  - Higher values = better performance")
+        print("  - 🟢 > 0.8, 🟡 > 0.6, 🟠 > 0.4, 🔴 ≤ 0.4")
+        print("="*60)
+        input("Press Enter to continue...")
     
     def handle_key_input(self, key):
         """Handle keyboard input and update motor command"""
@@ -165,6 +216,14 @@ class InteractivePolimiControl:
         elif key == '0':
             self.motor_strength = 1.0
             return "Motor strength set to 100%"
+            
+        elif key == 't':
+            self.show_all_rewards = not self.show_all_rewards
+            return f"Show all rewards: {'ON' if self.show_all_rewards else 'OFF'}"
+            
+        elif key == 'i':
+            self.print_reward_info()
+            return "Reward info displayed"
             
         else:
             return f"Unknown key: '{key}'"
