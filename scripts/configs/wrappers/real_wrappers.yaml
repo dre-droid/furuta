@@ -1,7 +1,7 @@
 - _target_: gymnasium.wrappers.TimeLimit
   max_episode_steps: 400
 - _target_: furuta.rl.wrappers.DeadZone
-  deadzone: 0.0
+  deadzone: 0.4
   center: 0.0
   max_act: 1.0
 - _target_: furuta.rl.wrappers.HistoryWrapper

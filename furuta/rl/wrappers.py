@@ -34,7 +34,7 @@ class DeadZone(gym.Wrapper):
     """
 
     def __init__(
-        self, env: gym.Env, deadzone: float = 0.2, center: float = 0.01, max_act: float = 0.75
+        self, env: gym.Env, deadzone: float = 0.2, center: float = 0.01, max_act: float = 1
     ):
         super().__init__(env)
         self.deadzone = deadzone
