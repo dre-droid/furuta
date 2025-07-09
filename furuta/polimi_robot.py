@@ -8,7 +8,7 @@ class PolimiRobot(Robot):
     def __init__(self, 
                  motor_encoder_cpr=48,
                  pendulum_encoder_cpr=5120 * 4, #might be wrong
-                 pwm_freq=10000):
+                 pwm_freq=1000):
         # Motor pins
         self.IN1_PIN = 25
         self.IN2_PIN = 24

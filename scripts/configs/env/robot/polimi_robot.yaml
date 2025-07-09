@@ -2,4 +2,4 @@
 _target_: furuta.polimi_robot.PolimiRobot
 motor_encoder_cpr: 48
 pendulum_encoder_cpr: 20480 #might be wrong
-pwm_freq: 10000
+pwm_freq: 1000
