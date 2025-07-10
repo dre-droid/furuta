@@ -13,11 +13,9 @@ MAX_RESET_TIME = 4  # seconds
 MAX_MOTOR_RESET_TIME = 0.2  # seconds
 RESET_TIME = 0.5
 ALPHA_THRESH = np.cos(
-    np.deg2rad(5)
-)  # alpha should stay between -5 and 5 deg for 0.5 sec for us to consider the env reset
+    np.deg2rad(2)
+)  # alpha should stay between -2 and 2 deg for 0.5 sec for us to consider the env reset
 
-class SensorFailureException(Exception):
-    pass
 
 class FurutaReal(FurutaBase):
     def __init__(
@@ -47,17 +45,10 @@ class FurutaReal(FurutaBase):
         self.episode_start_time = None
         self.episode_number = 0
 
-        # Sensor failure detection
-        self.last_nonzero_time = time.time()
-        self.failed = False
-
     def _init_vel_filt(self):
         self.vel_filt = VelocityFilter(2, dt=self.timing.dt)
 
     def _update_state(self, action):
-        # If failed, always send zero command
-        if self.failed:
-            action = 0.0
         motor_angle, pendulum_angle, _ = self.robot.step(action)
 
         # motor_angle: theta, pendulum angle: alpha
@@ -65,24 +56,6 @@ class FurutaReal(FurutaBase):
         vel = self.vel_filt(pos)
         state = np.concatenate([pos, vel])
         self._state = state
-        self._last_motor_angle = motor_angle
-        self._last_pendulum_angle = pendulum_angle
-
-    def _check_sensor_failure(self):
-        # Check for zero readings
-        motor_zero = np.isclose(self._last_motor_angle, 0.0, atol=1e-6)
-        pendulum_zero = np.isclose(self._last_pendulum_angle, 0.0, atol=1e-6)
-        current_zero = motor_zero or pendulum_zero
-        now = time.time()
-        if current_zero:
-            # If still zero, check if 60s have passed
-            if now - self.last_nonzero_time > 60:
-                self.failed = True
-                self.robot.step(0.0)  # Ensure motor is stopped
-                raise SensorFailureException("Sensor stuck at zero for 60 seconds")
-        else:
-            # Reset timer if any sensor is nonzero
-            self.last_nonzero_time = now
 
     def _log_episode_step(self, action, reward):
         """Log current step information for episode tracking"""
@@ -176,14 +149,6 @@ class FurutaReal(FurutaBase):
 
     def step(self, action):
         """Override step method to add logging"""
-        # If failed, always send zero command and return done
-        if self.failed:
-            self._update_state(0.0)
-            obs = self.get_obs()
-            reward = 0.0
-            terminated = True
-            truncated = False
-            return obs, reward, terminated, truncated, {"failure": True}
         # Get reward and observation from parent
         reward = self._reward_func(self._state)
         obs = self.get_obs()
@@ -191,9 +156,6 @@ class FurutaReal(FurutaBase):
         # Update state
         self._update_state(action[0])
         
-        # Check for sensor failure
-        self._check_sensor_failure()
-
         # Check termination
         terminated = not self.state_space.contains(self._state)
         truncated = False
@@ -264,8 +226,6 @@ class FurutaReal(FurutaBase):
         # and it'll be huge and wrong and will terminate the episode
         self._init_vel_filt()
         self._update_state(0.0)  # initial state
-        # After reset, check for sensor failure
-        self._check_sensor_failure()
         return self.get_obs(), {}
 
     # TODO: override parent render function
