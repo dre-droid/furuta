@@ -13,8 +13,8 @@ MAX_RESET_TIME = 4  # seconds
 MAX_MOTOR_RESET_TIME = 0.2  # seconds
 RESET_TIME = 0.5
 ALPHA_THRESH = np.cos(
-    np.deg2rad(2)
-)  # alpha should stay between -2 and 2 deg for 0.5 sec for us to consider the env reset
+    np.deg2rad(5)
+)  # alpha should stay between -5 and 5 deg for 0.5 sec for us to consider the env reset
 
 class SensorFailureException(Exception):
     pass
@@ -48,10 +48,8 @@ class FurutaReal(FurutaBase):
         self.episode_number = 0
 
         # Sensor failure detection
-        self.zero_sensor_episode_count = 0
         self.last_nonzero_time = time.time()
         self.failed = False
-        self._last_episode_zero = False
 
     def _init_vel_filt(self):
         self.vel_filt = VelocityFilter(2, dt=self.timing.dt)
@@ -77,22 +75,14 @@ class FurutaReal(FurutaBase):
         current_zero = motor_zero or pendulum_zero
         now = time.time()
         if current_zero:
-            if self._last_episode_zero:
-                self.zero_sensor_episode_count += 1
-            else:
-                self.zero_sensor_episode_count = 1
+            # If still zero, check if 60s have passed
             if now - self.last_nonzero_time > 60:
                 self.failed = True
                 self.robot.step(0.0)  # Ensure motor is stopped
                 raise SensorFailureException("Sensor stuck at zero for 60 seconds")
         else:
-            self.zero_sensor_episode_count = 0
+            # Reset timer if any sensor is nonzero
             self.last_nonzero_time = now
-        self._last_episode_zero = current_zero
-        if self.zero_sensor_episode_count >= 2:
-            self.failed = True
-            self.robot.step(0.0)
-            raise SensorFailureException("Sensor stuck at zero for 2 episodes")
 
     def _log_episode_step(self, action, reward):
         """Log current step information for episode tracking"""
