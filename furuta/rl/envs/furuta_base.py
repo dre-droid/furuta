@@ -125,6 +125,10 @@ class FurutaBase(gym.Env):
         terminated = not self.state_space.contains(self._state)
         truncated = False
 
+        # Add strong penalty for early termination
+        if terminated:
+            rwd -= 50.0  # Strong negative penalty for hitting limits
+
         return obs, rwd, terminated, truncated, {}
 
     def get_obs(self):
