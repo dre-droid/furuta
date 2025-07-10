@@ -9,7 +9,7 @@ progress_bar: True
 debug: True
 n_envs: 1
 model_artifact: null
-replay_buffer_artifact: "replay_buffer:latest"
+replay_buffer_artifact: null
 capture_video: True
 
 evaluation:
