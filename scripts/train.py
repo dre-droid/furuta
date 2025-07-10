@@ -15,7 +15,7 @@ from stable_baselines3.common.vec_env import (
 )
 
 import wandb
-from furuta.rl.envs.furuta_real import FurutaReal
+from furuta.rl.envs.furuta_real import FurutaReal, SensorFailureException
 from furuta.rl.utils import (
     download_artifact_file,
     seed_everything,
@@ -115,6 +115,9 @@ def main(cfg: DictConfig):
         )
     except KeyboardInterrupt:
         logging.info("Interupting training")
+    except SensorFailureException as e:
+        logging.error(f"Training stopped due to sensor failure: {e}")
+        # Optionally: Save model, cleanup, etc.
 
     # only save last video
     if cfg.capture_video:
