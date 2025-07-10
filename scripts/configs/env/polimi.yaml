@@ -7,4 +7,4 @@ _target_: furuta.rl.envs.furuta_real.FurutaReal
 control_freq: 50              # Control frequency (Hz)
 reward: "exp_alpha_2"           # Reward function selection
 angle_limits: [6, 6]       # Angle limits (both directions) [theta, alpha] in radians
-speed_limits: [60, null]      # Speed limits [theta_dot, alpha_dot] in rad/s
+speed_limits: [80, null]      # Speed limits [theta_dot, alpha_dot] in rad/s
