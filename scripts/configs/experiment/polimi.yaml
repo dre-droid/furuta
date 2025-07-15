@@ -8,8 +8,8 @@ total_timesteps: 100_000
 progress_bar: True
 debug: True
 n_envs: 1
-model_artifact: armandpl/furuta/model:v7
-replay_buffer_artifact: null
+model_artifact: "model:latest"
+replay_buffer_artifact: "replay_buffer:latest"
 capture_video: True
 
 evaluation:
