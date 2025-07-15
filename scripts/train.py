@@ -72,7 +72,7 @@ def main(cfg: DictConfig):
 
     # load model/replay buffer
     if cfg.model_artifact:
-        model.load(download_artifact_file(cfg.model_artifact, "model.zip"))
+        model = model.load(download_artifact_file(cfg.model_artifact, "model.zip"))
         print("Model loaded from artifact!")
         logging.info("Model loaded from artifact!")
 
@@ -82,8 +82,8 @@ def main(cfg: DictConfig):
         print("Replay buffer loaded from artifact!")
         logging.info("Replay buffer loaded from artifact!")
         if hasattr(model, 'replay_buffer'):
-            print(f"Replay buffer size: {getattr(model.replay_buffer, 'size', 'N/A')}")
-            logging.info(f"Replay buffer size: {getattr(model.replay_buffer, 'size', 'N/A')}")
+            print(f"Replay buffer size: {model.replay_buffer.size()}")
+            logging.info(f"Replay buffer size: {model.replay_buffer.size()}")
         else:
             print("Model does not have a replay_buffer attribute!")
             logging.warning("Model does not have a replay_buffer attribute!")
