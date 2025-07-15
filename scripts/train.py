@@ -75,6 +75,7 @@ def main(cfg: DictConfig):
         model = model.load(download_artifact_file(cfg.model_artifact, "model.zip"))
         print("Model loaded from artifact!")
         logging.info("Model loaded from artifact!")
+        model.set_env(vec_env)  # Ensure environment is set after loading
 
     if cfg.replay_buffer_artifact:
         rb_path = download_artifact_file(cfg.replay_buffer_artifact, "buffer.pkl")
