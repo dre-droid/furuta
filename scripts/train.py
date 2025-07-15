@@ -73,10 +73,20 @@ def main(cfg: DictConfig):
     # load model/replay buffer
     if cfg.model_artifact:
         model.load(download_artifact_file(cfg.model_artifact, "model.zip"))
+        print("Model loaded from artifact!")
+        logging.info("Model loaded from artifact!")
 
     if cfg.replay_buffer_artifact:
         rb_path = download_artifact_file(cfg.replay_buffer_artifact, "buffer.pkl")
         model.load_replay_buffer(rb_path)
+        print("Replay buffer loaded from artifact!")
+        logging.info("Replay buffer loaded from artifact!")
+        if hasattr(model, 'replay_buffer'):
+            print(f"Replay buffer size: {getattr(model.replay_buffer, 'size', 'N/A')}")
+            logging.info(f"Replay buffer size: {getattr(model.replay_buffer, 'size', 'N/A')}")
+        else:
+            print("Model does not have a replay_buffer attribute!")
+            logging.warning("Model does not have a replay_buffer attribute!")
 
     # Stop training when the model reaches the reward threshold
     eval_callback = None
