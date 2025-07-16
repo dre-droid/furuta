@@ -72,10 +72,9 @@ def main(cfg: DictConfig):
 
     # load model/replay buffer
     if cfg.model_artifact:
-        model = model.load(download_artifact_file(cfg.model_artifact, "model.zip"))
+        model = model.load(download_artifact_file(cfg.model_artifact, "model.zip"), env=vec_env)
         print("Model loaded from artifact!")
         logging.info("Model loaded from artifact!")
-        model.set_env(vec_env)  # Ensure environment is set after loading
 
     if cfg.replay_buffer_artifact:
         rb_path = download_artifact_file(cfg.replay_buffer_artifact, "buffer.pkl")
