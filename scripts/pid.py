@@ -1,4 +1,5 @@
 import argparse
+import os
 import time
 
 import numpy as np
@@ -25,7 +26,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Constants - using polimi robot control frequency
-    control_freq = 80.0
+    control_freq = 100.0
     dt = 1.0 / control_freq
 
     # Init polimi robot
@@ -46,7 +47,11 @@ if __name__ == "__main__":
         # Create the logger
         fname = f"{time.strftime('%Y%m%d-%H%M%S')}.mcap"
         log_path = args.dir + fname
-        logger = SimpleLogger(log_path)
+        
+        # Create log directory if it doesn't exist
+        os.makedirs(args.dir, exist_ok=True)
+        
+        logger = SimpleLogger(log_path)f
 
         # Reset encoders
         robot.reset_encoders()
