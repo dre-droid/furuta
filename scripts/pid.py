@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     try:
         # Init controllers
-        parameters = read_parameters_file()
+        parameters = read_parameters_file(PARAMETERS_PATH)
         pendulum_controller = Controller.build_controller(parameters["pendulum_controller"])
         motor_controller = Controller.build_controller(parameters["motor_controller"])
 
