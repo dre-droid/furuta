@@ -96,7 +96,12 @@ def main(cfg: DictConfig):
         if isinstance(env.unwrapped, FurutaReal):
             eval_env = env  # Use the same env, or skip evaluation
         else:
-            eval_env = copy.deepcopy(env)
+            # Create evaluation environment with same vectorization as training
+            eval_base_env = copy.deepcopy(env)
+            if cfg.n_envs > 1:
+                eval_env = SubprocVecEnv([lambda: copy.deepcopy(eval_base_env) for _ in range(cfg.n_envs)])
+            else:
+                eval_env = DummyVecEnv([lambda: eval_base_env])
 
         if cfg.evaluation.early_stopping_reward_threshold is not None:
             callback_on_best = StopTrainingOnRewardThreshold(
