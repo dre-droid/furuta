@@ -2,4 +2,4 @@ defaults:
   - sim
   - override dyn: tiny_randomized
 
-encoders_CPRs: [464.64, 8192.0]
+encoders_CPRs: [48, 20480]
