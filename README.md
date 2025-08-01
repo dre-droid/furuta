@@ -4,6 +4,8 @@ This project documents the construction and control of a rotary inverted pendulu
 
 The primary goal of this initiative, led by Professor Marcello Restelli at the Politecnico di Milano's AIRlab, was to create a compelling physical demonstration of reinforcement learning. The robot serves as an educational tool for university open days and other public events, showcasing advanced control concepts in an accessible way. [Here](https://youtu.be/lfd6InJiKxQ) is a video of the robot running the final trained model (around 8h of total training).
 
+https://github.com/user-attachments/assets/b5e6fd56-9224-4275-bd73-041dbf2cf8e3
+
 ---
 
 ## Table of Contents
@@ -121,7 +123,7 @@ This project builds on the foundational work from the original creators—reposi
 
 ### Author
 
-This version was adapted and built by [Andrea Mastroberti].
+This version was adapted and built by the author, Andrea Mastroberti.
 
 
 
